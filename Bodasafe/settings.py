@@ -17,7 +17,9 @@ SECRET_KEY = os.environ.get('KEY')#os.getenv('KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1','bodasafe-uganda-production.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://bodasafe-uganda-production.up.railway.app']
+
 
 
 # Application definition
