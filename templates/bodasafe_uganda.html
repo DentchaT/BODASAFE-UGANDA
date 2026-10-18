@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BodaSafe Uganda</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            850: '#1e3a8a',
+                            900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 h-full flex flex-col md:flex-row antialiased selection:bg-blue-500 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- USSD Simulation Modal -->
+    <div id="ussd-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 text-emerald-400 font-mono w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-emerald-500/30 relative">
+            <div class="absolute top-3 right-4 text-xs text-slate-400">UGX USSD Gateway</div>
+            <div class="flex items-center space-y-2 flex-col text-center my-4">
+                <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl mb-2">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                </div>
+                <h3 id="ussd-title" class="text-lg font-bold text-white">Mobile Money Push</h3>
+                <p id="ussd-message" class="text-sm text-slate-300">Please enter your Mobile Money PIN on your phone prompt to authorize payment.</p>
+            </div>
+            <div id="ussd-loader" class="my-6 flex justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
+            </div>
+            <div id="ussd-actions" class="hidden space-y-2">
+                <button onclick="closeUssdModal(true)" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-xl transition">Simulate PIN Success</button>
+                <button onclick="closeUssdModal(false)" class="w-full py-3 bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 font-semibold rounded-xl transition">Cancel Transaction</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Sidebar Navigation -->
+    <aside class="hidden md:flex md:w-64 bg-brand-900 text-white flex-col justify-between p-6 shadow-xl z-20">
+        <div>
+            <!-- Logo Brand -->
+            <div class="flex items-center space-x-3 mb-8">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg text-white font-bold text-xl">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide">BodaSafe</h1>
+                    <span class="text-xs text-blue-300 font-medium tracking-wider uppercase">Uganda Platform</span>
+                </div>
+            </div>
+
+            <!-- Nav Links -->
+            <nav class="space-y-1.5">
+                <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition active-tab bg-blue-600 text-white shadow-md">
+                    <i class="fa-solid fa-chart-pie w-5"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('profile')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-id-card w-5"></i>
+                    <span>Rider Profile</span>
+                </button>
+                <button onclick="switchTab('subscriptions')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-ticket w-5"></i>
+                    <span>Subscriptions</span>
+                </button>
+                <button onclick="switchTab('claims')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-file-medical w-5"></i>
+                    <span>Benefits & Claims</span>
+                </button>
+                <button onclick="switchTab('loans')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-hand-holding-dollar w-5"></i>
+                    <span>Bailout Facility</span>
+                </button>
+                <button onclick="switchTab('admin')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-white/10 hover:text-white">
+                    <i class="fa-solid fa-user-shield w-5"></i>
+                    <span>Stage Leader Portal</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- User Quick Switch / Footer info -->
+        <div class="pt-6 border-t border-slate-800">
+            <div class="bg-slate-800/80 p-3 rounded-xl flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-full bg-blue-500/30 text-blue-400 flex items-center justify-center font-bold">
+                    KA
+                </div>
+                <div class="overflow-hidden">
+                    <h4 class="text-sm font-semibold truncate text-white" id="sidebar-rider-name">Kavuma Andrew</h4>
+                    <p class="text-xs text-blue-300 truncate" id="sidebar-rider-stage">Nakawa Stage</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Mobile Top Bar -->
+    <header class="md:hidden bg-brand-900 text-white px-4 py-3.5 flex items-center justify-between shadow-md z-30 sticky top-0">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <span class="font-bold text-base tracking-wide">BodaSafe Uganda</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="switchTab('profile')" class="text-xs bg-blue-600/50 border border-blue-400/30 px-2.5 py-1 rounded-full font-medium flex items-center space-x-1">
+                <i class="fa-solid fa-user text-blue-300"></i>
+                <span id="mobile-badge-name">Andrew</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto pb-24 md:pb-8 p-4 md:p-8">
+        
+        <!-- ================= TAB 1: DASHBOARD ================= -->
+        <section id="tab-dashboard" class="tab-content space-y-6 max-w-6xl mx-auto">
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-blue-700 via-brand-850 to-indigo-900 rounded-2xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
+                    <i class="fa-solid fa-motorcycle"></i>
+                </div>
+                <div class="relative z-10 max-w-xl">
+                    <span class="inline-block bg-blue-500/30 text-blue-200 text-xs font-semibold px-3 py-1 rounded-full mb-3 border border-blue-400/20">
+                        <i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Active Gold Subscriber
+                    </span>
+                    <h2 class="text-2xl md:text-3xl font-bold mb-2">Mukama Katonda, Safe Riding!</h2>
+                    <p class="text-blue-100 text-sm md:text-base mb-6 leading-relaxed">
+                        Your micro-insurance and daily savings are fully up to date. Keep riding with peace of mind across Kampala and beyond.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="switchTab('subscriptions')" class="bg-white text-brand-900 font-semibold px-5 py-2.5 rounded-xl text-sm shadow hover:bg-blue-50 transition flex items-center space-x-2">
+                            <i class="fa-solid fa-ticket text-blue-600"></i>
+                            <span>Pay Subscription</span>
+                        </button>
+                        <button onclick="switchTab('claims')" class="bg-blue-600/50 hover:bg-blue-600/80 border border-white/20 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition flex items-center space-x-2">
+                            <i class="fa-solid fa-file-medical"></i>
+                            <span>File Medical Claim</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Metrics Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Policy Status</span>
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-solid fa-shield"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-lg font-bold text-emerald-600 flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Fully Covered</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Valid until Mon next week</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Track Record</span>
+                        <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xl font-bold text-slate-800" id="dash-rating">Gold (4.9 ★)</div>
+                        <p class="text-xs text-slate-500 mt-1">Eligible for weekly plan</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Loan Support</span>
+                        <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-solid fa-motorcycle"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-lg font-bold text-slate-800">Watu / Mogo</div>
+                        <p class="text-xs text-emerald-600 font-medium mt-1">No bailout required</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Micro-Savings</span>
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-solid fa-piggy-bank"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xl font-bold text-slate-800">UGX 145,000</div>
+                        <p class="text-xs text-slate-500 mt-1">Accrued safety buffer</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity & Quick Support -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Recent Activities -->
+                <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 text-lg">Recent Transactions & Events</h3>
+                        <button onclick="switchTab('subscriptions')" class="text-xs font-semibold text-blue-600 hover:text-blue-700">View All</button>
+                    </div>
+                    <div class="space-y-3" id="recent-activity-list">
+                        <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-800">Weekly Loyalty Subscription</h4>
+                                    <p class="text-xs text-slate-500">Paid via MTN Mobile Money (*165#)</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-bold text-emerald-600">- UGX 70,000</span>
+                                <p class="text-xs text-slate-400">3 days ago</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-800">Medical Claim Approved</h4>
+                                    <p class="text-xs text-slate-500">Mulago Hospital clinic visit cover</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-bold text-blue-600">+ UGX 150,000</span>
+                                <p class="text-xs text-slate-400">1 week ago</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact / Stage Leader Widget -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Stage Leader & SOS</h3>
+                        <div class="bg-blue-50/60 rounded-xl p-4 border border-blue-100 mb-4">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-12 h-12 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-lg shadow">
+                                    S
+                                    <!-- Using initial -->
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm">Ssempijja Godfrey</h4>
+                                    <p class="text-xs text-blue-600 font-medium">Nakawa Stage Chairman</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Call stage chairman immediately in case of police impoundment, road accidents, or urgent medical emergency.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <a href="tel:+256770000000" class="w-full py-3 bg-brand-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm text-center block shadow transition">
+                            <i class="fa-solid fa-phone mr-2 text-blue-400"></i> Call Stage Leader
+                        </a>
+                        <button onclick="triggerSosEmergency()" class="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl text-sm transition border border-rose-200">
+                            <i class="fa-solid fa-triangle-exclamation mr-2"></i> Trigger Stage SOS Alert
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: RIDER PROFILE ================= -->
+        <section id="tab-profile" class="tab-content hidden space-y-6 max-w-4xl mx-auto">
+            <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-3xl font-bold flex items-center justify-center shadow-lg">
+                            KA
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h2 class="text-2xl font-bold text-slate-800" id="profile-name-title">Kavuma Andrew</h2>
+                                <span class="bg-amber-100 text-amber-700 font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center">
+                                    <i class="fa-solid fa-star mr-1"></i> Gold Rider
+                                </span>
+                            </div>
+                            <p class="text-sm text-slate-500 mt-1">Boda Boda Rider • Registered Member since Jan 2024</p>
+                        </div>
+                    </div>
+                    <button onclick="openEditProfileModal()" class="px-4 py-2 bg-brand-50 hover:bg-brand-100 text-brand-600 font-semibold rounded-xl text-sm transition border border-brand-100">
+                        <i class="fa-solid fa-pen-to-square mr-1.5"></i> Edit Profile
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base">Stage & Vehicle Details</h3>
+                        
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+                            <span class="text-sm text-slate-500">Stage Name</span>
+                            <span class="text-sm font-bold text-slate-800" id="profile-stage">Nakawa Stage (Jinja Road)</span>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+                            <span class="text-sm text-slate-500">Motorcycle Plate Number</span>
+                            <span class="text-sm font-bold text-slate-800" id="profile-plate">UEX 452G</span>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+                            <span class="text-sm text-slate-500">Motorcycle Financer</span>
+                            <span class="text-sm font-bold text-blue-600">Watu Credit Uganda</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-800 text-base">Membership & Rating</h3>
+                        
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+                            <span class="text-sm text-slate-500">Months Active on Platform</span>
+                            <span class="text-sm font-bold text-slate-800" id="profile-months">14 Months (>3 mos unlocked)</span>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+                            <span class="text-sm text-slate-500">Gold Track Record Rating</span>
+                            <span class="text-sm font-bold text-amber-500 flex items-center">
+                                <i class="fa-solid fa-star mr-1"></i> 4.9 / 5.0 (Excellent)
+                            </span>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+                            <span class="text-sm text-slate-500">National ID / NIN</span>
+                            <span class="text-sm font-bold text-slate-800 font-mono">CM98022104XYZ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: SUBSCRIPTIONS ================= -->
+        <section id="tab-subscriptions" class="tab-content hidden space-y-6 max-w-4xl mx-auto">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-1">Flexible Subscription Tiers</h2>
+                <p class="text-sm text-slate-500">Choose your payment frequency. Riders active over 3 months with good track records qualify for the discounted Weekly Loyalty tier.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Daily Plan -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border-2 border-slate-100 flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1 rounded-full">Standard Plan</span>
+                            <span class="text-xs font-semibold text-slate-400">No minimum months</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-1">Daily Cover</h3>
+                        <p class="text-xs text-slate-500 mb-6">Ideal for casual riders and new members starting out.</p>
+                        
+                        <div class="mb-6">
+                            <span class="text-3xl font-extrabold text-slate-900">UGX 10,000</span>
+                            <span class="text-slate-500 text-sm"> / day</span>
+                        </div>
+
+                        <ul class="space-y-3 mb-6 text-sm text-slate-600">
+                            <li class="flex items-center space-x-2">
+                                <i class="fa-solid fa-check text-emerald-500"></i>
+                                <span>Basic accident medical cover</span>
+                            </li>
+                            <li class="flex items-center space-x-2">
+                                <i class="fa-solid fa-check text-emerald-500"></i>
+                                <span>Daily micro-savings accumulation</span>
+                            </li>
+                            <li class="flex items-center space-x-2">
+                                <i class="fa-solid fa-check text-emerald-500"></i>
+                                <span>Stage SOS emergency support</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button onclick="initiateUssdPayment('Daily Plan (UGX 10,000)')" class="w-full py-3.5 bg-brand-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-mobile-screen text-blue-400"></i>
+                        <span>Pay Daily via Mobile Money</span>
+                    </button>
+                </div>
+
+                <!-- Weekly Loyalty Plan -->
+                <div class="bg-gradient-to-b from-blue-900 to-brand-900 text-white rounded-2xl p-6 shadow-xl border-2 border-blue-500 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/20 rounded-full blur-xl"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">Recommended & Save</span>
+                            <span class="text-xs font-semibold text-blue-200">Gold Track Record</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-1">Weekly Loyalty Plan</h3>
+                        <p class="text-xs text-blue-200 mb-6">For riders active >3 months with proven safety rating. Saves you 30,000 UGX weekly!</p>
+                        
+                        <div class="mb-6">
+                            <span class="text-3xl font-extrabold text-white">UGX 70,000</span>
+                            <span class="text-blue-200 text-sm"> / week <s class="text-xs text-blue-400">70k value</s></span>
+                        </div>
+
+                        <ul class="space-y-3 mb-6 text-sm text-blue-100">
+                            <li class="flex items-center space-x-2">
+                                <i class="fa-solid fa-check text-emerald-400"></i>
+                                <span>Full Medical Bill Coverage (Up to 1.5M UGX)</span>
+                            </li>
+                            <li class="flex items-center space-x-2">
+                                <i class="fa-solid fa-check text-emerald-400"></i>
+                                <span>Permanent Disability & Family Burial Cover</span>
+                            </li>
+                            <li class="flex items-center space-x-2">
+                                <i class="fa-solid fa-check text-emerald-400"></i>
+                                <span>Priority Bailout Facility Access</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button onclick="initiateUssdPayment('Weekly Loyalty Plan (UGX 70,000)')" class="w-full py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-sm shadow-lg transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-mobile-screen"></i>
+                        <span>Pay Weekly via Mobile Money</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: BENEFITS & CLAIMS ================= -->
+        <section id="tab-claims" class="tab-content hidden space-y-6 max-w-4xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 mb-1">Benefits & Claims Portal</h2>
+                    <p class="text-sm text-slate-500">Submit medical bills or emergency support claims and track approval status in real-time.</p>
+                </div>
+                <button onclick="openNewClaimModal()" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-sm shadow transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Submit New Claim</span>
+                </button>
+            </div>
+
+            <!-- Coverage Limits Banner -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="text-blue-600 font-bold text-lg mb-1">UGX 200k - 1.5M</div>
+                    <h4 class="font-bold text-slate-800 text-sm">Medical Bill Coverage</h4>
+                    <p class="text-xs text-slate-500 mt-1">Accident hospitalization and clinic outpatient treatment reimbursement.</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="text-indigo-600 font-bold text-lg mb-1">Permanent Support</div>
+                    <h4 class="font-bold text-slate-800 text-sm">Disability Protection</h4>
+                    <p class="text-xs text-slate-500 mt-1">Lump-sum financial support for permanent accident injuries.</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="text-emerald-600 font-bold text-lg mb-1">UGX 2,000,000</div>
+                    <h4 class="font-bold text-slate-800 text-sm">Family Burial Cover</h4>
+                    <p class="text-xs text-slate-500 mt-1">Immediate bereavement and funeral support disbursement to next of kin.</p>
+                </div>
+            </div>
+
+            <!-- Active Claims List -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 text-lg mb-4">Your Submitted Claims Tracker</h3>
+                <div class="space-y-4" id="claims-list-container">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="font-bold text-slate-800 text-sm">Medical Accident Bill - Mulago Hospital</h4>
+                                    <span class="bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">Pending Verification</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">Claim ID: #BS-8842 • Submitted Oct 12, 2026 • Amount: <strong class="text-slate-700">UGX 350,000</strong></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="viewClaimDetails('Mulago Hospital Medical Bill', 'UGX 350,000', 'Pending Verification', 'Stage leader and medical board reviewing clinic receipts.')" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-lg text-xs border border-slate-200 transition">
+                                View Progress
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="font-bold text-slate-800 text-sm">Routine Outpatient Clinic Reimbursement</h4>
+                                    <span class="bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">Approved & Disbursed</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">Claim ID: #BS-7290 • Disbursed via MTN Momo • Amount: <strong class="text-slate-700">UGX 120,000</strong></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="viewClaimDetails('Routine Outpatient Clinic Reimbursement', 'UGX 120,000', 'Approved & Disbursed', 'Funds sent to Mobile Money number 077****123.')" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-lg text-xs border border-slate-200 transition">
+                                View Progress
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 5: BAILOUT FACILITY ================= -->
+        <section id="tab-loans" class="tab-content hidden space-y-6 max-w-4xl mx-auto">
+            <div class="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute right-4 bottom-4 opacity-15 text-8xl">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div class="relative z-10 max-w-xl">
+                    <span class="bg-blue-500/30 text-blue-200 text-xs font-semibold px-3 py-1 rounded-full mb-3 inline-block border border-blue-400/20">
+                        Motorcycle Loan Safety Net
+                    </span>
+                    <h2 class="text-2xl md:text-3xl font-bold mb-2">Emergency Loan Bailout Facility</h2>
+                    <p class="text-blue-100 text-sm md:text-base mb-6 leading-relaxed">
+                        Struggling to meet your weekly loan installment with <strong class="text-white">Watu Credit</strong> or <strong class="text-white">Mogo</strong> due to low passenger turnout or mechanical breakdown? BodaSafe provides emergency weekly payment support.
+                    </p>
+                    <button onclick="openBailoutModal()" class="bg-white text-brand-900 font-bold px-6 py-3 rounded-xl text-sm shadow hover:bg-blue-50 transition">
+                        Request Bailout Support
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loan Providers Card -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 text-lg mb-4">Active Financer Integration</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                                W
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">Watu Credit Uganda</h4>
+                                <p class="text-xs text-slate-500">Weekly Installment: UGX 55,000</p>
+                            </div>
+                        </div>
+                        <span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Linked</span>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                                M
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">Mogo Uganda</h4>
+                                <p class="text-xs text-slate-500">Weekly Installment: UGX 60,000</p>
+                            </div>
+                        </div>
+                        <span class="bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-full">Optional</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 6: ADMIN / STAGE LEADER OVERVIEW ================= -->
+        <section id="tab-admin" class="tab-content hidden space-y-6 max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">Stage Chairman Portal</span>
+                    <h2 class="text-2xl font-bold text-slate-800 mt-1">Nakawa Stage Management Dashboard</h2>
+                </div>
+                <button onclick="refreshAdminStats()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-xl text-sm shadow-sm border border-slate-200 transition">
+                    <i class="fa-solid fa-rotate mr-1.5"></i> Refresh Analytics
+                </button>
+            </div>
+
+            <!-- Stage Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stage Revenue (Week)</span>
+                    <div class="text-2xl font-extrabold text-slate-800 mt-1">UGX 4.85M</div>
+                    <p class="text-xs text-emerald-600 font-medium mt-1">+12% vs last week</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Insured Riders</span>
+                    <div class="text-2xl font-extrabold text-blue-600 mt-1">142 Riders</div>
+                    <p class="text-xs text-slate-500 mt-1">94% compliance rate</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Claims</span>
+                    <div class="text-2xl font-extrabold text-amber-500 mt-1">5 Claims</div>
+                    <p class="text-xs text-slate-500 mt-1">Requires review</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bailout Fund Pool</span>
+                    <div class="text-2xl font-extrabold text-emerald-600 mt-1">UGX 12.4M</div>
+                    <p class="text-xs text-slate-500 mt-1">Ready for disbursement</p>
+                </div>
+            </div>
+
+            <!-- Claims Approval Table -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 text-lg mb-4">Pending Medical & Bailout Approvals</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="pb-3 font-semibold">Rider Name</th>
+                                <th class="pb-3 font-semibold">Stage & Plate</th>
+                                <th class="pb-3 font-semibold">Request Type</th>
+                                <th class="pb-3 font-semibold">Amount</th>
+                                <th class="pb-3 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100" id="admin-claims-tbody">
+                            <tr>
+                                <td class="py-3.5 font-semibold text-slate-800">Kavuma Andrew</td>
+                                <td class="py-3.5 text-slate-500">Nakawa • UEX 452G</td>
+                                <td class="py-3.5"><span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold">Medical Bill</span></td>
+                                <td class="py-3.5 font-bold text-slate-700">UGX 350,000</td>
+                                <td class="py-3.5 text-right space-x-2">
+                                    <button onclick="approveAdminClaim(this, 'Approved')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition">Approve</button>
+                                    <button onclick="approveAdminClaim(this, 'Rejected')" class="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-semibold transition">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-3.5 font-semibold text-slate-800">Muwonge Ronald</td>
+                                <td class="py-3.5 text-slate-500">Kyambogo • UFA 992Z</td>
+                                <td class="py-3.5"><span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-semibold">Bailout Loan</span></td>
+                                <td class="py-3.5 font-bold text-slate-700">UGX 60,000</td>
+                                <td class="py-3.5 text-right space-x-2">
+                                    <button onclick="approveAdminClaim(this, 'Approved')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition">Approve</button>
+                                    <button onclick="approveAdminClaim(this, 'Rejected')" class="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-semibold transition">Reject</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around items-center z-40 shadow-lg">
+        <button onclick="switchTab('dashboard')" class="mobile-nav-btn flex flex-col items-center text-blue-600 text-xs font-semibold px-2 py-1">
+            <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
+            <span>Home</span>
+        </button>
+        <button onclick="switchTab('subscriptions')" class="mobile-nav-btn flex flex-col items-center text-slate-400 text-xs font-semibold px-2 py-1">
+            <i class="fa-solid fa-ticket text-lg mb-0.5"></i>
+            <span>Subs</span>
+        </button>
+        <button onclick="switchTab('claims')" class="mobile-nav-btn flex flex-col items-center text-slate-400 text-xs font-semibold px-2 py-1">
+            <i class="fa-solid fa-file-medical text-lg mb-0.5"></i>
+            <span>Claims</span>
+        </button>
+        <button onclick="switchTab('loans')" class="mobile-nav-btn flex flex-col items-center text-slate-400 text-xs font-semibold px-2 py-1">
+            <i class="fa-solid fa-hand-holding-dollar text-lg mb-0.5"></i>
+            <span>Bailout</span>
+        </button>
+        <button onclick="switchTab('admin')" class="mobile-nav-btn flex flex-col items-center text-slate-400 text-xs font-semibold px-2 py-1">
+            <i class="fa-solid fa-user-shield text-lg mb-0.5"></i>
+            <span>Admin</span>
+        </button>
+    </nav>
+
+    <!-- Modals (Claim Submission, Bailout, Edit Profile, View Progress) -->
+    <div id="custom-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto" id="modal-inner-content">
+            <!-- Dynamically populated modal content -->
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State management
+        let currentTab = 'dashboard';
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Show selected tab
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            // Update Desktop Sidebar active styling
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
+            });
+            event && event.currentTarget && event.currentTarget.classList.contains('nav-btn') && (() => {
+                const b = event.currentTarget;
+                b.classList.remove('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
+                b.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            })();
+
+            // Update Mobile Bottom Nav active styling
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600');
+                btn.classList.add('text-slate-400');
+            });
+            // Match mobile button clicked
+            const mobileBtns = document.querySelectorAll('.mobile-nav-btn');
+            const tabMap = {'dashboard':0, 'subscriptions':1, 'claims':2, 'loans':3, 'admin':4};
+            if(tabMap[tabId] !== undefined && mobileBtns[tabMap[tabId]]) {
+                mobileBtns[tabMap[tabId]].classList.remove('text-slate-400');
+                mobileBtns[tabMap[tabId]].classList.add('text-blue-600');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-white text-sm font-semibold flex items-center space-x-2 transition transform translate-y-2 opacity-0 ${type === 'success' ? 'bg-emerald-600' : 'bg-slate-900'}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-info-circle'}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // USSD Mobile Money Simulation
+        function initiateUssdPayment(planName) {
+            const modal = document.getElementById('ussd-modal');
+            const title = document.getElementById('ussd-title');
+            const message = document.getElementById('ussd-message');
+            const loader = document.getElementById('ussd-loader');
+            const actions = document.getElementById('ussd-actions');
+
+            title.innerText = `Mobile Money: ${planName}`;
+            message.innerText = "Dialing *165# / Push USSD prompt sent to your registered phone (MTN / Airtel)...";
+            loader.classList.remove('hidden');
+            actions.classList.add('hidden');
+            modal.classList.remove('hidden');
+
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                message.innerText = `Authorization push received for ${planName}. Enter your Mobile Money PIN on your phone to complete payment.`;
+                actions.classList.remove('hidden');
+            }, 2000);
+        }
+
+        function closeUssdModal(success) {
+            document.getElementById('ussd-modal').classList.add('hidden');
+            if(success) {
+                showToast("Payment successful! Subscription activated.");
+            } else {
+                showToast("Transaction canceled by user.", "info");
+            }
+        }
+
+        function triggerSosEmergency() {
+            showToast("🚨 SOS Stage Alert sent to Nakawa Chairman & Police hotline!", "info");
+        }
+
+        // Modal for New Claim
+        function openNewClaimModal() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-inner-content');
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-lg">Submit Incident or Medical Claim</h3>
+                    <button onclick="closeCustomModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="submitClaimForm(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Claim Type</label>
+                        <select id="claim-type" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+                            <option>Medical Bill Reimbursement</option>
+                            <option>Accident Hospitalization Cover</option>
+                            <option>Permanent Disability Support</option>
+                            <option>Family Bereavement / Burial Cover</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Estimated Amount (UGX)</label>
+                        <input type="number" id="claim-amount" placeholder="e.g. 250000" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Incident Description & Hospital/Police Ref</label>
+                        <textarea rows="3" placeholder="Describe incident details, clinic name, police notification..." required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow transition">Submit for Stage & Board Review</button>
+                </form>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function submitClaimForm(e) {
+            e.preventDefault();
+            closeCustomModal();
+            showToast("Claim submitted successfully! Tracking ID #BS-9912 generated.");
+        }
+
+        function openBailoutModal() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-inner-content');
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-lg">Request Emergency Loan Bailout</h3>
+                    <button onclick="closeCustomModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="submitBailoutForm(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Financing Company</label>
+                        <select class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                            <option>Watu Credit Uganda</option>
+                            <option>Mogo Uganda</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Weekly Installment Due (UGX)</label>
+                        <input type="number" value="55000" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Reason for Bailout Request</label>
+                        <textarea rows="3" placeholder="Low passenger turnout / Mechanical breakdown..." required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow transition">Send Bailout Request to Stage Chairman</button>
+                </form>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function submitBailoutForm(e) {
+            e.preventDefault();
+            closeCustomModal();
+            showToast("Emergency loan bailout request submitted to Stage Chairman.");
+        }
+
+        function openEditProfileModal() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-inner-content');
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-lg">Edit Rider Profile</h3>
+                    <button onclick="closeCustomModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="saveProfileForm(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Full Name</label>
+                        <input type="text" id="edit-name" value="Kavuma Andrew" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Stage Name</label>
+                        <input type="text" id="edit-stage" value="Nakawa Stage (Jinja Road)" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Motorcycle Plate Number</label>
+                        <input type="text" id="edit-plate" value="UEX 452G" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow transition">Save Profile Changes</button>
+                </form>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function saveProfileForm(e) {
+            e.preventDefault();
+            const name = document.getElementById('edit-name').value;
+            const stage = document.getElementById('edit-stage').value;
+            const plate = document.getElementById('edit-plate').value;
+
+            document.getElementById('profile-name-title').innerText = name;
+            document.getElementById('sidebar-rider-name').innerText = name;
+            document.getElementById('profile-stage').innerText = stage;
+            document.getElementById('sidebar-rider-stage').innerText = stage.split(' ')[0] + ' Stage';
+            document.getElementById('profile-plate').innerText = plate;
+            document.getElementById('mobile-badge-name').innerText = name.split(' ')[0];
+
+            closeCustomModal();
+            showToast("Rider profile updated successfully!");
+        }
+
+        function viewClaimDetails(title, amount, status, notes) {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-inner-content');
+            content.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-800 text-lg">Claim Tracker Status</h3>
+                    <button onclick="closeCustomModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <span class="text-xs text-slate-400 uppercase font-semibold">Claim Subject</span>
+                        <h4 class="font-bold text-slate-800 text-base">${title}</h4>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <span class="text-xs text-slate-400 uppercase font-semibold">Amount Requested</span>
+                            <div class="font-bold text-slate-800 text-base">${amount}</div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <span class="text-xs text-slate-400 uppercase font-semibold">Status</span>
+                            <div class="font-bold text-blue-600 text-base">${status}</div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                        <span class="text-xs text-blue-600 uppercase font-semibold">Stage Leader & Board Notes</span>
+                        <p class="text-sm text-slate-700 mt-1">${notes}</p>
+                    </div>
+                    <button onclick="closeCustomModal()" class="w-full py-3 bg-brand-900 text-white font-bold rounded-xl text-sm">Close</button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        function approveAdminClaim(btn, status) {
+            const row = btn.closest('tr');
+            const statusCell = document.createElement('span');
+            statusCell.className = `px-2.5 py-1 rounded-full text-xs font-semibold ${status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`;
+            statusCell.innerText = status;
+            
+            const actionsCell = row.querySelector('td:last-child');
+            actionsCell.innerHTML = '';
+            actionsCell.appendChild(statusCell);
+            showToast(`Claim has been marked as ${status}.`);
+        }
+
+        function refreshAdminStats() {
+            showToast("Stage analytics and active riders list refreshed.");
+        }
+    </script>
+</body>
+</html>
