@@ -20,7 +20,6 @@ DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1','bodasafe-uganda-production.up.railway.app']
 CSRF_TRUSTED_ORIGINS = ['https://bodasafe-uganda-production.up.railway.app']
 
-python.github_attestations = false
 
 # Application definition
 
