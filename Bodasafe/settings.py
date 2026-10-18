@@ -1,6 +1,10 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+import dj_database_url
+import cloudinary
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -8,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8e(x+yr5afn(s^a7f1^#w)ysu!xo%(-r6bt%2$fw-mhz*fxl7z'
+SECRET_KEY = os.environ.get('KEY')#os.getenv('KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -26,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Bodasafeuganda',
+    'whitenoise.runserver_nostatic',
 ]
 
 MIDDLEWARE = [
@@ -36,6 +41,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'Bodasafe.urls'
@@ -61,11 +67,15 @@ WSGI_APPLICATION = 'Bodasafe.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': BASE_DIR / 'db.sqlite3',
+#    }
+#}
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))#os.getenv('DATABASE_URL'))#
 }
 
 
@@ -111,9 +121,35 @@ STATICFILES_DIRS = [
     BASE_DIR/'static'
 ]
 
+LOGIN_URL = 'login'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#whitenoise storage stuff-----
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+#-------------------------------------------------------------------------
+#---------------------code by Dr.James Atwiine----------------------------
+#-------------------------------------------------------------------------
+
 # Media storage
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+#--------CLOUDINARY_STORAGE_CONFIGURATION-----------------------
+#cloudinary_cloud_storage_configuration:
+cloudinary.config(
+    cloud_name= os.environ.get("CLOUD_NAME"),#os.getenv('CLOUD_NAME'),
+    api_key= os.environ.get("CLOUD_API_KEY"),#os.getenv('CLOUD_API_KEY'),
+    api_secret= os.environ.get("CLOUD_API_SECRET"),#os.getenv('CLOUD_API_SECRET')
+    secure= True
+)
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUD_NAME'),#os.getenv('CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUD_API_KEY'),#os.getenv('CLOUD_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUD_API_SECRET'),#os.getenv('CLOUD_API_SECRET')
+}
 
 
 # Email
