@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md border mt-10">
+    <h1 class="text-2xl font-bold mb-2 text-slate-900">Service Fee Payment</h1>
+    <p class="text-sm text-slate-600 mb-6">You are paying the processing fee to the secretary for: <strong>{{ advert.title }}</strong></p>
+    
+    <div class="bg-indigo-50 p-4 rounded-lg mb-6 border border-indigo-100 flex justify-between items-center">
+        <span class="text-slate-700 font-medium">Amount Due:</span>
+        <span class="text-xl font-bold text-indigo-700">UGX {{ advert.service_fee }}</span>
+    </div>
+
+    <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Select Provider</label>
+            {{ form.provider }}
+        </div>
+        <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Mobile Money Number</label>
+            {{ form.phone_number }}
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded transition shadow">
+            Authorize & Pay UGX {{ advert.service_fee }}
+        </button>
+    </form>
+    
+    <div class="mt-4 text-center">
+        <a href="{% url 'advert_detail' advert.id %}" class="text-xs text-indigo-600 hover:underline">← Back to Document Checklist</a>
+    </div>
+</div>
+{% endblock %}

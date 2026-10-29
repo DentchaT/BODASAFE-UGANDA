@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Applicant Portal</h1>
+    <p class="text-slate-600 text-sm">Search for job openings, licenses, and institutional calls, and submit documents directly to local secretaries.</p>
+</div>
+
+<!-- Search Form -->
+<form method="GET" class="flex gap-2 mb-8">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by title, institution, or district (e.g., Mbarara, C-Care)..." class="flex-grow border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-lg text-sm transition">Search</button>
+</form>
+
+<h2 class="text-xl font-bold text-slate-800 mb-4">Available Adverts</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {% for advert in adverts %}
+        <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-bold text-indigo-600 uppercase tracking-wide">{{ advert.institution.name }} ({{ advert.institution.district }})</span>
+                <h3 class="text-lg font-bold text-slate-900 mt-1 mb-2">{{ advert.title }}</h3>
+                <p class="text-xs text-slate-600 mb-4 line-clamp-3">{{ advert.description }}</p>
+            </div>
+            
+            <div class="border-t pt-4 mt-auto">
+                <div class="flex justify-between items-center text-xs text-slate-500 mb-3">
+                    <span>Deadline: {{ advert.deadline }}</span>
+                    <span class="font-bold text-slate-700">Fee: UGX {{ advert.service_fee }}</span>
+                </div>
+                <a href="{% url 'advert_detail' advert.id %}" class="block text-center bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-semibold transition">
+                    View Checklist & Submit Documents →
+                </a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-span-3 bg-white p-8 text-center rounded-lg border border-dashed border-slate-300">
+            <p class="text-slate-500 text-sm">No adverts found matching your search.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

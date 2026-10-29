@@ -19,9 +19,15 @@ SECRET_KEY = os.environ.get('KEY')#os.getenv('KEY')#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['bodasafe-uganda-productionsu.up.railway.app','bodasafe.com']
+ALLOWED_HOSTS = ['127.0.0.1','bodasafe-uganda-productionsu.up.railway.app','bodasafe.com']
 CSRF_TRUSTED_ORIGINS = ['https://bodasafe-uganda-productionsu.up.railway.app','https://bodasafe.com','https://www.bodasafe.com']
 
+# 1. Custom User Model Setting (MUST BE SET BEFORE INITIAL MIGRATION)
+AUTH_USER_MODEL = 'Bodasafeuganda.User'  
+
+# 2. Media File Settings (for uploaded document PDFs/Images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Application definition
 
