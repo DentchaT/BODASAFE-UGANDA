@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('KEY')#os.getenv('KEY')#
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False#True
+DEBUG = True#False#
 
 ALLOWED_HOSTS = ['127.0.0.1','bodasafe-uganda-productionsu.up.railway.app','bodasafe.com']
 CSRF_TRUSTED_ORIGINS = ['https://bodasafe-uganda-productionsu.up.railway.app','https://bodasafe.com','https://www.bodasafe.com']
