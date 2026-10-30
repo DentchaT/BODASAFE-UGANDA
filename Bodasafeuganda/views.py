@@ -141,7 +141,7 @@ def create_advert(request):
         Advert, 
         RequiredDocument, 
         fields=('name', 'description'), 
-        extra=3,        # Shows 3 empty document fields by default
+        extra=5,        # Shows 3 empty document fields by default
         can_delete=False
     )
 
