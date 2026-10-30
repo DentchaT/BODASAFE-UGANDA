@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
-from .forms import ApplicantRegistrationForm, SecretaryRegistrationForm, PaymentForm
+from .forms import ApplicantRegistrationForm, SecretaryRegistrationForm, PaymentForm, AdvertForm
 from .models import Advert, Institution, Submission, RequiredDocument, Payment
 
 def home(request):
@@ -123,6 +123,50 @@ def review_submissions(request, advert_id):
     return render(request, 'core/review_submissions.html', {
         'advert': advert,
         'submissions': submissions
+    })
+
+@login_required
+def create_advert(request):
+    # Ensure only registered secretaries can access this page
+    if request.user.role != 'secretary':
+        return redirect('home')
+
+    try:
+        profile = request.user.secretary_profile
+    except SecretaryProfile.DoesNotExist:
+        return redirect('home')
+
+    # Create an inline formset for RequiredDocuments linked to the Advert
+    RequiredDocFormSet = inlineformset_factory(
+        Advert, 
+        RequiredDocument, 
+        fields=('name', 'description'), 
+        extra=3,        # Shows 3 empty document fields by default
+        can_delete=False
+    )
+
+    if request.method == 'POST':
+        form = AdvertForm(request.POST)
+        formset = RequiredDocFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            advert = form.save(commit=False)
+            advert.institution = profile.institution
+            advert.created_by = profile
+            advert.save()
+            
+            # Save the associated required documents
+            formset.instance = advert
+            formset.save()
+            
+            return redirect('secretary_dashboard')
+    else:
+        form = AdvertForm()
+        formset = RequiredDocFormSet()
+
+    return render(request, 'core/create_advert.html', {
+        'form': form,
+        'formset': formset
     })
 
 #---------------APPLICANT VIEWS-----------------
