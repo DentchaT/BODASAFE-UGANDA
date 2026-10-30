@@ -3,7 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from .forms import ApplicantRegistrationForm, SecretaryRegistrationForm, PaymentForm, AdvertForm
-from .models import Advert, Institution, Submission, RequiredDocument, Payment
+from .models import Advert, Institution, Submission, RequiredDocument, Payment, SecretaryProfile
 
 def home(request):
     adverts = Advert.objects.all().order_by('-created_at')[:6]
@@ -167,6 +167,42 @@ def create_advert(request):
     return render(request, 'core/create_advert.html', {
         'form': form,
         'formset': formset
+    })
+
+@login_required
+def review_submissions(request, advert_id):
+    # Ensure only secretaries can access this page
+    if request.user.role != 'secretary':
+        return redirect('home')
+
+    advert = get_object_or_404(Advert, id=advert_id)
+    
+    # Optional security check: make sure the secretary belongs to the institution hosting this advert
+    try:
+        profile = request.user.secretary_profile
+        if advert.institution != profile.institution and not request.user.is_superuser:
+            return redirect('secretary_dashboard')
+    except SecretaryProfile.DoesNotExist:
+        return redirect('home')
+
+    submissions = Submission.objects.filter(advert=advert).select_related('applicant', 'required_document')
+
+    # Handle status updates and feedback comments submitted by the secretary
+    if request.method == 'POST':
+        submission_id = request.POST.get('submission_id')
+        new_status = request.POST.get('status')
+        comment = request.POST.get('comment', '').strip()
+
+        sub = get_object_or_404(Submission, id=submission_id, advert=advert)
+        sub.status = new_status
+        sub.secretary_comment = comment
+        sub.save()
+        
+        return redirect('review_submissions', advert_id=advert.id)
+
+    return render(request, 'core/review_submissions.html', {
+        'advert': advert,
+        'submissions': submissions
     })
 
 #---------------APPLICANT VIEWS-----------------
