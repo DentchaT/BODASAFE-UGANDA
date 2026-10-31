@@ -171,13 +171,11 @@ def create_advert(request):
 
 @login_required
 def review_submissions(request, advert_id):
-    # Ensure only secretaries can access this page
     if request.user.role != 'secretary':
         return redirect('home')
 
     advert = get_object_or_404(Advert, id=advert_id)
     
-    # Optional security check: make sure the secretary belongs to the institution hosting this advert
     try:
         profile = request.user.secretary_profile
         if advert.institution != profile.institution and not request.user.is_superuser:
@@ -185,9 +183,7 @@ def review_submissions(request, advert_id):
     except SecretaryProfile.DoesNotExist:
         return redirect('home')
 
-    submissions = Submission.objects.filter(advert=advert).select_related('applicant', 'required_document')
-
-    # Handle status updates and feedback comments submitted by the secretary
+    # Handle status updates / comments submitted via POST
     if request.method == 'POST':
         submission_id = request.POST.get('submission_id')
         new_status = request.POST.get('status')
@@ -200,9 +196,17 @@ def review_submissions(request, advert_id):
         
         return redirect('review_submissions', advert_id=advert.id)
 
+    # Fetch all submissions for this advert
+    submissions = Submission.objects.filter(advert=advert).select_related('applicant', 'required_document')
+
+    # Group submissions by applicant
+    applicants_data = defaultdict(list)
+    for sub in submissions:
+        applicants_data[sub.applicant].append(sub)
+
     return render(request, 'core/review_submissions.html', {
         'advert': advert,
-        'submissions': submissions
+        'applicants_data': applicants_data.items() # Passes list of (applicant, [submissions])
     })
 
 #---------------APPLICANT VIEWS-----------------
