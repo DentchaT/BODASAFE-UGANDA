@@ -71,35 +71,7 @@ def secretary_dashboard(request):
         'adverts': adverts
     })
 
-@login_required
-def create_advert(request):
-    if request.user.role != 'secretary':
-        return redirect('home')
 
-    profile = request.user.secretary_profile
-    RequiredDocFormSet = inlineformset_factory(
-        Advert, RequiredDocument, fields=('name', 'description'), extra=3, can_delete=False
-    )
-
-    if request.method == 'POST':
-        form = AdvertForm(request.POST)
-        formset = RequiredDocFormSet(request.POST)
-        if form.is_valid() and formset.is_valid():
-            advert = form.save(commit=False)
-            advert.institution = profile.institution
-            advert.created_by = profile
-            advert.save()
-            formset.instance = advert
-            formset.save()
-            return redirect('secretary_dashboard')
-    else:
-        form = AdvertForm()
-        formset = RequiredDocFormSet()
-
-    return render(request, 'core/create_advert.html', {
-        'form': form,
-        'formset': formset
-    })
 
 @login_required
 def review_submissions(request, advert_id):

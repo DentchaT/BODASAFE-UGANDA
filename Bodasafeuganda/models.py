@@ -1,4 +1,5 @@
 from django.db import models
+from cloudinary.models import CloudinaryField
 
 # Create your models here.
 
@@ -73,7 +74,7 @@ class Submission(models.Model):
     applicant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submissions')
     advert = models.ForeignKey(Advert, on_delete=models.CASCADE, related_name='applications')
     required_document = models.ForeignKey(RequiredDocument, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='applicant_documents/')
+    file = CloudinaryField('file',folder='applicant_documents/',resource_type='auto',blank=True, null=True)#models.FileField(upload_to='applicant_documents/')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     secretary_comment = models.TextField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
